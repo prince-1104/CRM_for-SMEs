@@ -35,6 +35,8 @@ function mapItems(items: InvoiceItem[]): DocumentItem[] {
       quantity: Number(item.quantity),
       unit: item.unit,
       rate: Number(item.rate),
+      rateMax: item.rateMax != null ? Number(item.rateMax) : undefined,
+      rateText: item.rateText ?? undefined,
       gstPercent: Number(item.gstPercent),
     }));
 }

@@ -67,6 +67,8 @@ export async function PATCH(
           quantity: new Decimal(item.quantity),
           unit: item.unit,
           rate: new Decimal(item.rate),
+          rateMax: item.rateMax != null ? new Decimal(item.rateMax) : null,
+          rateText: item.rateText ?? null,
           amount: new Decimal(amount),
           gstPercent: new Decimal(item.gstPercent),
           gstAmount: new Decimal(gstAmount),

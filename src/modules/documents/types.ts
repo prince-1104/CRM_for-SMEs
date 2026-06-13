@@ -7,6 +7,10 @@ export type DocumentItem = {
   quantity: number;
   unit: string;
   rate: number;
+  /** Upper bound when rate is a range (e.g. 200-300 → rate=200, rateMax=300) */
+  rateMax?: number;
+  /** Original rate input text (e.g. "200-300"), present only for range rates */
+  rateText?: string;
   gstPercent: number;
 };
 

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createInvoiceSchema, type CreateInvoiceInput } from "@/lib/validations/invoice";
+import { createInvoiceSchema, type CreateInvoiceInput, parseRateInput } from "@/lib/validations/invoice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,25 @@ function lineAmount(qty: number, rate: number): number {
 }
 function gstOnAmount(amount: number, gstPercent: number): number {
   return Math.round((amount * gstPercent) / 100 * 100) / 100;
+}
+
+/** Format the amount for a line, supporting rate ranges like "200-300" */
+function formatLineAmount(qty: number, rateText: string | undefined, rate: number, gstPct: number): string {
+  if (rateText) {
+    const parsed = parseRateInput(rateText);
+    if (parsed.rateMax != null) {
+      const lowTaxable = lineAmount(qty, parsed.rate);
+      const lowGst = gstOnAmount(lowTaxable, gstPct);
+      const lowTotal = lowTaxable + lowGst;
+      const highTaxable = lineAmount(qty, parsed.rateMax);
+      const highGst = gstOnAmount(highTaxable, gstPct);
+      const highTotal = highTaxable + highGst;
+      return `${formatCurrency(lowTotal)} – ${formatCurrency(highTotal)}`;
+    }
+  }
+  const taxable = lineAmount(qty, rate);
+  const gst = gstOnAmount(taxable, gstPct);
+  return formatCurrency(taxable + gst);
 }
 
 /** When value is 0, select all on focus so typing replaces it instead of appending */
@@ -72,7 +91,7 @@ export function NewQuotationForm({
       invoiceDate: new Date().toISOString().slice(0, 10),
       deliveryCharges: undefined,
       advancePayment: undefined,
-      items: [{ name: "", quantity: 1, unit: "pcs", rate: 0, gstPercent: 0 }],
+      items: [{ name: "", quantity: 1, unit: "pcs", rate: 0, gstPercent: 0, rateText: "" }],
     },
   });
 
@@ -84,15 +103,24 @@ export function NewQuotationForm({
     if (!p) return;
     setValue(`items.${index}.name`, p.name);
     setValue(`items.${index}.rate`, p.defaultPrice);
+    setValue(`items.${index}.rateText`, String(p.defaultPrice));
     setValue(`items.${index}.gstPercent`, p.gstPercent);
     setValue(`items.${index}.unit`, p.unit);
   }
 
   async function onSubmit(data: CreateInvoiceInput) {
+    // Preprocess items to parse rate range text before sending
+    const processedItems = data.items.map((item) => {
+      if (item.rateText) {
+        const parsed = parseRateInput(item.rateText);
+        return { ...item, rate: parsed.rate, rateMax: parsed.rateMax, rateText: parsed.rateText };
+      }
+      return item;
+    });
     const res = await fetch("/api/invoices", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...data, documentType: "quotation" }),
+      body: JSON.stringify({ ...data, items: processedItems, documentType: "quotation" }),
     });
     if (!res.ok) {
       const j = await res.json();
@@ -197,6 +225,7 @@ export function NewQuotationForm({
                   unit: "pcs",
                   rate: 0,
                   gstPercent: 0,
+                  rateText: "",
                 })
               }
             >
@@ -223,9 +252,8 @@ export function NewQuotationForm({
                     const qty = item?.quantity ?? 0;
                     const rate = item?.rate ?? 0;
                     const gstPct = item?.gstPercent ?? 0;
-                    const taxable = lineAmount(qty, rate);
-                    const gst = gstOnAmount(taxable, gstPct);
-                    const amount = taxable + gst;
+                    const rateText = item?.rateText;
+                    const amountDisplay = formatLineAmount(qty, rateText, rate, gstPct);
                     return (
                       <tr key={field.id} className="border-b">
                         <td className="p-2">
@@ -263,13 +291,19 @@ export function NewQuotationForm({
                             {...register(`items.${index}.unit`)}
                           />
                         </td>
-                        <td className="p-2 text-right w-24">
+                        <td className="p-2 text-right w-28">
                           <Input
-                            type="number"
-                            step="0.01"
+                            type="text"
+                            placeholder="e.g. 200 or 200-300"
                             className="h-9 w-full min-w-0 text-right"
                             onFocus={selectAllIfZero}
-                            {...register(`items.${index}.rate`, { valueAsNumber: true })}
+                            {...register(`items.${index}.rateText`, {
+                              onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                                const val = e.target.value;
+                                const parsed = parseRateInput(val);
+                                setValue(`items.${index}.rate`, parsed.rate);
+                              },
+                            })}
                           />
                         </td>
                         <td className="p-2 text-right">
@@ -285,8 +319,8 @@ export function NewQuotationForm({
                             <span className="shrink-0 text-muted-foreground w-4">%</span>
                           </div>
                         </td>
-                        <td className="p-2 text-right font-medium tabular-nums">
-                          {formatCurrency(amount)}
+                        <td className="p-2 text-right font-medium tabular-nums whitespace-nowrap">
+                          {amountDisplay}
                         </td>
                         <td className="p-2">
                           <Button

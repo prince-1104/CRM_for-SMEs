@@ -31,7 +31,11 @@ export function ItemsTable({ items, totals, currency = "INR", variant = "invoice
           >
             <Text style={[docStyles.colQuotNum, docStyles.cellMuted]}>{i + 1}</Text>
             <Text style={[docStyles.colQuotDesc, docStyles.cellBold]}>{item.name}</Text>
-            <Text style={[docStyles.colQuotPrice, docStyles.right]}>{formatCurrencyForPdf(item.rate, currency)}</Text>
+            <Text style={[docStyles.colQuotPrice, docStyles.right]}>
+              {item.rateMax != null
+                ? `${formatCurrencyForPdf(item.rate, currency)} – ${formatCurrencyForPdf(item.rateMax, currency)}`
+                : formatCurrencyForPdf(item.rate, currency)}
+            </Text>
           </View>
         ))}
       </View>
@@ -60,7 +64,11 @@ export function ItemsTable({ items, totals, currency = "INR", variant = "invoice
             <Text style={[docStyles.colNum, docStyles.cellMuted]}>{i + 1}</Text>
             <Text style={[docStyles.colItem, docStyles.cellBold]}>{item.name}</Text>
             <Text style={[docStyles.colQty, docStyles.cellMuted]}>{qtyUnit}</Text>
-            <Text style={[docStyles.colUnitRate, docStyles.right]}>{formatCurrencyForPdf(item.rate, currency)}</Text>
+            <Text style={[docStyles.colUnitRate, docStyles.right]}>
+              {item.rateMax != null
+                ? `${formatCurrencyForPdf(item.rate, currency)} – ${formatCurrencyForPdf(item.rateMax, currency)}`
+                : formatCurrencyForPdf(item.rate, currency)}
+            </Text>
             <Text style={[docStyles.colGst, docStyles.right]}>{Number(item.gstPercent)}%</Text>
             <Text style={[docStyles.colAmount, docStyles.right, docStyles.cellBold]}>{formatCurrencyForPdf(lineTotal, currency)}</Text>
           </View>

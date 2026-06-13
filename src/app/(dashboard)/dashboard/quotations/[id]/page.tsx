@@ -122,16 +122,29 @@ export default async function QuotationDetailPage({
                     const amt = Number(item.amount);
                     const gst = Number(item.gstAmount);
                     const half = gst / 2;
+                    const hasRange = item.rateMax != null;
+                    const rateDisplay = hasRange
+                      ? `₹${Number(item.rate).toFixed(2)} – ₹${Number(item.rateMax).toFixed(2)}`
+                      : `₹${Number(item.rate).toFixed(2)}`;
+                    // For range: compute high-end amount for display
+                    const highAmt = hasRange ? Number(item.quantity) * Number(item.rateMax) : amt;
+                    const highGst = hasRange ? Math.round((highAmt * Number(item.gstPercent)) / 100 * 100) / 100 : gst;
+                    const amountDisplay = hasRange
+                      ? `₹${amt.toFixed(2)} – ₹${highAmt.toFixed(2)}`
+                      : `₹${amt.toFixed(2)}`;
+                    const totalDisplay = hasRange
+                      ? `₹${(amt + gst).toFixed(2)} – ₹${(highAmt + highGst).toFixed(2)}`
+                      : `₹${(amt + gst).toFixed(2)}`;
                     return (
                       <tr key={item.id} className="border-b">
                         <td className="p-3">{item.name}</td>
                         <td className="p-3 text-right">{Number(item.quantity)}</td>
-                        <td className="p-3 text-right">₹{Number(item.rate).toFixed(2)}</td>
-                        <td className="p-3 text-right">₹{amt.toFixed(2)}</td>
+                        <td className="p-3 text-right whitespace-nowrap">{rateDisplay}</td>
+                        <td className="p-3 text-right whitespace-nowrap">{amountDisplay}</td>
                         <td className="p-3 text-right">{Number(item.gstPercent)}%</td>
                         <td className="p-3 text-right">₹{half.toFixed(2)}</td>
                         <td className="p-3 text-right">₹{half.toFixed(2)}</td>
-                        <td className="p-3 text-right">₹{(amt + gst).toFixed(2)}</td>
+                        <td className="p-3 text-right whitespace-nowrap">{totalDisplay}</td>
                       </tr>
                     );
                   })}
