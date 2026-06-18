@@ -34,8 +34,21 @@ export function formatCurrency(
  */
 export function formatCurrencyForPdf(
   value: number,
-  currency: string = DEFAULT_CURRENCY
+  currency: string = DEFAULT_CURRENCY,
+  excludeSymbol: boolean = false
 ): string {
+  if (excludeSymbol) {
+    return numeral(value).format("0,0.00");
+  }
   const symbol = CURRENCY_SYMBOLS_PDF[currency] ?? currency + " ";
   return symbol + numeral(value).format("0,0.00");
+}
+
+/**
+ * Get PDF-safe currency symbol.
+ */
+export function getPdfCurrencySymbol(
+  currency: string = DEFAULT_CURRENCY
+): string {
+  return (CURRENCY_SYMBOLS_PDF[currency] ?? currency).trim();
 }

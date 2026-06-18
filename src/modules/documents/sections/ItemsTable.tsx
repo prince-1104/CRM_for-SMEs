@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text } from "@react-pdf/renderer";
 import { docStyles } from "../pdf/documentStyles";
-import { formatCurrencyForPdf } from "../utils/formatCurrency";
+import { formatCurrencyForPdf, getPdfCurrencySymbol } from "../utils/formatCurrency";
 import type { DocumentItem } from "../types";
 import type { TotalsResult } from "../types";
 
@@ -15,6 +15,7 @@ type ItemsTableProps = {
 
 export function ItemsTable({ items, totals, currency = "INR", variant = "invoice" }: ItemsTableProps) {
   const { lineItems } = totals;
+  const symbol = getPdfCurrencySymbol(currency);
 
   if (variant === "quotation") {
     return (
@@ -22,7 +23,7 @@ export function ItemsTable({ items, totals, currency = "INR", variant = "invoice
         <View style={docStyles.tableHeader}>
           <Text style={[docStyles.colQuotNum, docStyles.tableHeaderText]}>SL no</Text>
           <Text style={[docStyles.colQuotDesc, docStyles.tableHeaderText]}>Description</Text>
-          <Text style={[docStyles.colQuotPrice, docStyles.tableHeaderText]}>Price/pc</Text>
+          <Text style={[docStyles.colQuotPrice, docStyles.tableHeaderText]}>Price/pc ({symbol})</Text>
         </View>
         {items.map((item, i) => (
           <View
@@ -34,8 +35,8 @@ export function ItemsTable({ items, totals, currency = "INR", variant = "invoice
             <Text style={[docStyles.colQuotDesc, docStyles.cellBold]}>{item.name}</Text>
             <Text style={[docStyles.colQuotPrice, docStyles.right]}>
               {item.rateMax != null
-                ? `${formatCurrencyForPdf(item.rate, currency)} – ${formatCurrencyForPdf(item.rateMax, currency)}`
-                : formatCurrencyForPdf(item.rate, currency)}
+                ? `${formatCurrencyForPdf(item.rate, currency, true)} – ${formatCurrencyForPdf(item.rateMax, currency, true)}`
+                : formatCurrencyForPdf(item.rate, currency, true)}
             </Text>
           </View>
         ))}
@@ -49,9 +50,9 @@ export function ItemsTable({ items, totals, currency = "INR", variant = "invoice
         <Text style={[docStyles.colNum, docStyles.tableHeaderText]}>#</Text>
         <Text style={[docStyles.colItem, docStyles.tableHeaderText]}>Item Description</Text>
         <Text style={[docStyles.colQty, docStyles.tableHeaderText]}>Qty</Text>
-        <Text style={[docStyles.colUnitRate, docStyles.tableHeaderText]}>Unit Rate</Text>
+        <Text style={[docStyles.colUnitRate, docStyles.tableHeaderText]}>Unit Rate ({symbol})</Text>
         <Text style={[docStyles.colGst, docStyles.tableHeaderText]}>GST</Text>
-        <Text style={[docStyles.colAmount, docStyles.tableHeaderText]}>Amount</Text>
+        <Text style={[docStyles.colAmount, docStyles.tableHeaderText]}>Amount ({symbol})</Text>
       </View>
       {items.map((item, i) => {
         const line = lineItems[i];
@@ -68,11 +69,13 @@ export function ItemsTable({ items, totals, currency = "INR", variant = "invoice
             <Text style={[docStyles.colQty, docStyles.cellMuted]}>{qtyUnit}</Text>
             <Text style={[docStyles.colUnitRate, docStyles.right]}>
               {item.rateMax != null
-                ? `${formatCurrencyForPdf(item.rate, currency)} – ${formatCurrencyForPdf(item.rateMax, currency)}`
-                : formatCurrencyForPdf(item.rate, currency)}
+                ? `${formatCurrencyForPdf(item.rate, currency, true)} – ${formatCurrencyForPdf(item.rateMax, currency, true)}`
+                : formatCurrencyForPdf(item.rate, currency, true)}
             </Text>
             <Text style={[docStyles.colGst, docStyles.right]}>{Number(item.gstPercent)}%</Text>
-            <Text style={[docStyles.colAmount, docStyles.right, docStyles.cellBold]}>{formatCurrencyForPdf(lineTotal, currency)}</Text>
+            <Text style={[docStyles.colAmount, docStyles.right, docStyles.cellBold]}>
+              {formatCurrencyForPdf(lineTotal, currency, true)}
+            </Text>
           </View>
         );
       })}
