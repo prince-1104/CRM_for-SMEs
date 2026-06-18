@@ -6,16 +6,18 @@ import { StyleSheet } from "@react-pdf/renderer";
  * --accent-lt #c4a0fb, --muted #7a6a95, --border #d8ccf0, --row-even #f5f1fd
  */
 const colors = {
-  ink: "#0f172a",          // Slate 900
-  paper: "#ffffff",        // Pure White
-  accent: "#7c3aed",       // Violet 600 (Brand Accent)
-  accentLt: "#f5f3ff",     // Violet 50
-  muted: "#475569",        // Slate 600
-  lightMuted: "#64748b",   // Slate 505 (metadata text)
-  border: "#cbd5e1",       // Slate 300 (Clean divider lines)
-  borderLight: "#e2e8f0",  // Slate 200 (Subtle borders)
-  rowEven: "#f8fafc",      // Slate 50
+  brandDark: "#2e1065",       // Deep Royal Purple
+  brandMedium: "#6d28d9",     // Violet 700
+  brandLight: "#d8b4fe",      // Violet 300
+  brandSuperLight: "#f5f3ff", // Violet 50 (soft background)
+  ink: "#0f172a",             // Slate 900
+  muted: "#475569",           // Slate 600
+  lightMuted: "#64748b",      // Slate 500
+  border: "#cbd5e1",          // Slate 300
+  borderLight: "#e2e8f0",     // Slate 200
   white: "#ffffff",
+  whiteOpacity70: "rgba(255,255,255,0.7)",
+  whiteOpacity50: "rgba(255,255,255,0.5)",
 };
 
 export const docStyles = StyleSheet.create({
@@ -31,15 +33,16 @@ export const docStyles = StyleSheet.create({
   // Decorator line at the top of the A4 page
   topBar: {
     height: 4,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.brandMedium,
   },
 
-  // —— Header (Premium, Clean) ——
+  // —— Header (Premium, Rich Purple Banner) ——
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    paddingTop: 32,
+    backgroundColor: colors.brandDark,
+    paddingTop: 24,
     paddingBottom: 20,
     paddingHorizontal: 32,
   },
@@ -47,12 +50,12 @@ export const docStyles = StyleSheet.create({
   brandName: {
     fontSize: 20,
     fontWeight: "bold",
-    color: colors.ink,
+    color: colors.white,
     marginBottom: 4,
   },
   brandTagline: {
     fontSize: 8,
-    color: colors.accent,
+    color: colors.brandLight,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 6,
@@ -60,31 +63,31 @@ export const docStyles = StyleSheet.create({
   },
   brandContact: {
     fontSize: 9,
-    color: colors.muted,
+    color: colors.whiteOpacity70,
     lineHeight: 1.4,
   },
   headerRight: { alignItems: "flex-end" },
   docTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    color: colors.ink,
+    color: colors.white,
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   docNumber: {
     fontSize: 10,
-    color: colors.accent,
+    color: colors.brandLight,
     letterSpacing: 1,
     fontWeight: "bold",
     marginBottom: 3,
   },
   docDate: {
     fontSize: 9,
-    color: colors.lightMuted,
+    color: colors.whiteOpacity50,
     marginBottom: 6,
   },
 
-  // Status Badges
+  // Status Badges (Clean pills)
   statusBadgePaid: {
     paddingVertical: 3,
     paddingHorizontal: 8,
@@ -140,7 +143,7 @@ export const docStyles = StyleSheet.create({
   // —— Content wrapper ——
   content: {
     paddingHorizontal: 32,
-    paddingTop: 12,
+    paddingTop: 16,
     paddingBottom: 48, // space for fixed footer
   },
 
@@ -163,7 +166,7 @@ export const docStyles = StyleSheet.create({
   partyName: {
     fontSize: 12,
     fontWeight: "bold",
-    color: colors.ink,
+    color: colors.brandDark, // Highlight client name in brand color
     marginBottom: 4,
   },
   partyDetail: {
@@ -172,22 +175,21 @@ export const docStyles = StyleSheet.create({
     lineHeight: 1.4,
   },
 
-  // —— Items table ——
+  // —— Items table (Premium colorful) ——
   table: { marginTop: 16, marginBottom: 16 },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: colors.rowEven,
+    backgroundColor: colors.brandMedium, // Solid brand color header
     paddingVertical: 8,
     paddingHorizontal: 10,
-    borderBottomWidth: 1.5,
-    borderBottomColor: colors.border,
+    borderBottomWidth: 0,
   },
   tableHeaderText: {
     fontSize: 8,
     fontWeight: "bold",
     letterSpacing: 0.5,
     textTransform: "uppercase",
-    color: colors.muted,
+    color: colors.white, // Crisp white text on dark background
   },
   tableRow: {
     flexDirection: "row",
@@ -197,7 +199,7 @@ export const docStyles = StyleSheet.create({
     paddingHorizontal: 10,
     alignItems: "center",
   },
-  tableRowAlt: { backgroundColor: colors.rowEven },
+  tableRowAlt: { backgroundColor: colors.brandSuperLight }, // Zebra stripes in brand background tint
   colNum: { width: "8%", textAlign: "center" },
   colItem: { width: "32%" },
   colQty: { width: "12%", textAlign: "center" },
@@ -240,20 +242,20 @@ export const docStyles = StyleSheet.create({
     paddingHorizontal: 10,
     marginTop: 6,
     borderRadius: 4,
-    backgroundColor: colors.accentLt,
+    backgroundColor: colors.brandDark, // Deep brand color block
     fontSize: 11,
     fontWeight: "bold",
-    color: colors.ink,
+    color: colors.white,
   },
   grandTotalLabel: {
     fontSize: 11,
     fontWeight: "bold",
-    color: colors.accent,
+    color: colors.white,
   },
   grandTotalValue: {
     fontSize: 13,
     fontWeight: "bold",
-    color: colors.accent,
+    color: colors.white,
   },
 
   // —— Amount in words ——
@@ -261,21 +263,21 @@ export const docStyles = StyleSheet.create({
     marginBottom: 16,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: colors.accentLt,
+    backgroundColor: colors.brandSuperLight,
     borderLeftWidth: 3,
-    borderLeftColor: colors.accent,
+    borderLeftColor: colors.brandMedium,
     borderRadius: 2,
     fontSize: 9,
-    color: colors.ink,
+    color: colors.brandDark,
   },
   wordsBlockStrong: {
     fontWeight: "bold",
-    color: colors.accent,
+    color: colors.brandMedium,
   },
 
   // —— Notes & Terms ——
   notesTerms: { marginBottom: 16, fontSize: 8.5, color: colors.muted },
-  notesTermsLabel: { fontWeight: "bold", color: colors.ink, marginBottom: 3 },
+  notesTermsLabel: { fontWeight: "bold", color: colors.brandDark, marginBottom: 3 },
 
   // —— Footer (Fixed at bottom) ——
   footer: {
@@ -291,7 +293,7 @@ export const docStyles = StyleSheet.create({
     borderTopColor: colors.borderLight,
   },
   footerNote: { fontSize: 8, color: colors.lightMuted },
-  footerBrand: { fontSize: 9, fontWeight: "bold", color: colors.accent },
+  footerBrand: { fontSize: 9, fontWeight: "bold", color: colors.brandMedium },
   pageNumber: {
     fontSize: 8,
     color: colors.lightMuted,

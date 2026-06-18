@@ -2,14 +2,14 @@ import React from "react";
 import { View, Text, StyleSheet } from "@react-pdf/renderer";
 import type { BankDetails as BankDetailsType } from "../types";
 
-// ─── Colour tokens (Premium Theme) ─────────────────────────────────────────────
-const BOX_BG = "#faf5ff"; // Violet 50/100 light
-const BORDER_COLOR = "#e9d5ff"; // Violet 200
-const LEFT_BORDER_COLOR = "#7c3aed"; // Violet 600
-const TEXT_DARK = "#0f172a"; // Slate 900
-const LABEL_COLOR = "#64748b"; // Slate 500
-const DIVIDER_COLOR = "#e9d5ff"; // Violet 200
-const VALUE_HIGHLIGHT = "#7c3aed"; // Violet 600
+// ─── Colour tokens (Premium Colorful Theme) ─────────────────────────────────────
+const BOX_BG = "#2e1065"; // Deep Royal Purple
+const BORDER_COLOR = "#2e1065";
+const LEFT_BORDER_COLOR = "#6d28d9"; // Violet 700
+const TEXT_DARK = "#ffffff"; // Crisp White values
+const LABEL_COLOR = "#d8b4fe"; // Light Purple labels
+const DIVIDER_COLOR = "rgba(255, 255, 255, 0.15)";
+const VALUE_HIGHLIGHT = "#ffffff";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
