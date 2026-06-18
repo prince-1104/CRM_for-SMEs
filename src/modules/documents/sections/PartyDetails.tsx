@@ -10,18 +10,21 @@ type PartyDetailsProps = {
 };
 
 export function PartyDetails({ billedTo, toLabel }: PartyDetailsProps) {
-  const parts: string[] = [];
-  if (billedTo.address) parts.push(billedTo.address);
-  if (billedTo.email) parts.push(billedTo.email);
-  if (billedTo.phone) parts.push(billedTo.phone);
-  const detailLine = parts.join(" · ");
-
   return (
     <View style={docStyles.billedToSection}>
       <Text style={docStyles.partyLabel}>{toLabel}</Text>
       <Text style={docStyles.partyName}>{billedTo.name}</Text>
-      {detailLine ? (
-        <Text style={docStyles.partyDetail}>{detailLine}</Text>
+      {billedTo.address ? (
+        <Text style={docStyles.partyDetail}>{billedTo.address}</Text>
+      ) : null}
+      {billedTo.phone ? (
+        <Text style={docStyles.partyDetail}>Phone: {billedTo.phone}</Text>
+      ) : null}
+      {billedTo.email ? (
+        <Text style={docStyles.partyDetail}>Email: {billedTo.email}</Text>
+      ) : null}
+      {billedTo.gstin ? (
+        <Text style={docStyles.partyDetail}>GSTIN: {billedTo.gstin}</Text>
       ) : null}
     </View>
   );

@@ -54,6 +54,7 @@ export function BaseDocument({
   return (
     <Document>
       <Page size="A4" style={docStyles.page}>
+        <View style={docStyles.topBar} />
         <DocumentHeader
           title={title}
           documentNumber={data.documentNumber}
@@ -99,11 +100,15 @@ export function BaseDocument({
           {showPaymentInfo && data.bankDetails && <BankDetails bank={data.bankDetails} />}
         </View>
 
-        <View style={docStyles.footer}>
+        <View style={docStyles.footer} fixed>
           <Text style={docStyles.footerNote}>
             Thank you for your business.
           </Text>
           <Text style={docStyles.footerBrand}>{data.company.name}</Text>
+          <Text
+            style={docStyles.pageNumber}
+            render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
+          />
         </View>
       </Page>
     </Document>

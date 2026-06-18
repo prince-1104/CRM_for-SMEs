@@ -29,11 +29,17 @@ export function DocumentHeader({
   companyTagline,
   status,
 }: DocumentHeaderProps) {
-  const contactParts: string[] = [];
-  if (companyAddress) contactParts.push(companyAddress);
-  if (companyPhone) contactParts.push(companyPhone);
-  if (companyEmail) contactParts.push(companyEmail);
-  const contactLine = contactParts.join(" · ");
+  const statusLower = status?.toLowerCase() || "";
+  let badgeStyle = docStyles.statusBadgeDraft;
+  let badgeTextStyle = docStyles.statusBadgeDraftText;
+
+  if (statusLower === "paid") {
+    badgeStyle = docStyles.statusBadgePaid;
+    badgeTextStyle = docStyles.statusBadgePaidText;
+  } else if (statusLower === "unpaid") {
+    badgeStyle = docStyles.statusBadgeUnpaid;
+    badgeTextStyle = docStyles.statusBadgeUnpaidText;
+  }
 
   return (
     <View style={docStyles.header}>
@@ -42,8 +48,14 @@ export function DocumentHeader({
         {companyTagline && (
           <Text style={docStyles.brandTagline}>{companyTagline}</Text>
         )}
-        {contactLine ? (
-          <Text style={docStyles.brandContact}>{contactLine}</Text>
+        {companyAddress ? (
+          <Text style={docStyles.brandContact}>{companyAddress}</Text>
+        ) : null}
+        {companyPhone ? (
+          <Text style={docStyles.brandContact}>Phone: {companyPhone}</Text>
+        ) : null}
+        {companyEmail ? (
+          <Text style={docStyles.brandContact}>Email: {companyEmail}</Text>
         ) : null}
       </View>
       <View style={docStyles.headerRight}>
@@ -51,8 +63,8 @@ export function DocumentHeader({
         <Text style={docStyles.docNumber}>{documentNumber}</Text>
         <Text style={docStyles.docDate}>Issued: {formatDateLong(date)}</Text>
         {status != null && status !== "" && (
-          <View style={docStyles.statusBadge}>
-            <Text style={docStyles.statusBadgeText}>{status}</Text>
+          <View style={badgeStyle}>
+            <Text style={badgeTextStyle}>{status}</Text>
           </View>
         )}
       </View>

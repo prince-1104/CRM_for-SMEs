@@ -28,6 +28,7 @@ export function ItemsTable({ items, totals, currency = "INR", variant = "invoice
           <View
             key={i}
             style={i % 2 === 1 ? [docStyles.tableRow, docStyles.tableRowAlt] : docStyles.tableRow}
+            wrap={false}
           >
             <Text style={[docStyles.colQuotNum, docStyles.cellMuted]}>{i + 1}</Text>
             <Text style={[docStyles.colQuotDesc, docStyles.cellBold]}>{item.name}</Text>
@@ -60,6 +61,7 @@ export function ItemsTable({ items, totals, currency = "INR", variant = "invoice
           <View
             key={i}
             style={i % 2 === 1 ? [docStyles.tableRow, docStyles.tableRowAlt] : docStyles.tableRow}
+            wrap={false}
           >
             <Text style={[docStyles.colNum, docStyles.cellMuted]}>{i + 1}</Text>
             <Text style={[docStyles.colItem, docStyles.cellBold]}>{item.name}</Text>
