@@ -44,7 +44,7 @@ export function BaseDocument({
   companyTagline,
   showTotals = true,
   itemsTableVariant = "invoice",
-  showStatus = true,
+  showStatus = false,
   showPaymentInfo = true,
 }: BaseDocumentProps) {
   const totals = calculateTotals(data.items);
