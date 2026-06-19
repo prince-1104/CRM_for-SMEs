@@ -491,6 +491,19 @@ export function EditInvoiceForm({
                 </tbody>
               </table>
             </div>
+
+            <div className="mt-3 flex justify-start">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto text-primary border-primary/20 hover:bg-primary/5 hover:text-primary"
+                onClick={appendNewLine}
+              >
+                + Add new line
+              </Button>
+            </div>
+
             <div className="mt-6 rounded-lg border bg-muted/40 dark:bg-muted/20 p-4 space-y-2.5 max-w-sm ml-auto">
               <div className="flex justify-between text-sm">
                 <span>Total</span>

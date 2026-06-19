@@ -455,6 +455,19 @@ export function NewQuotationForm({
                 </tbody>
               </table>
             </div>
+
+            <div className="mt-3 flex justify-start">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto text-primary border-primary/20 hover:bg-primary/5 hover:text-primary"
+                onClick={appendNewLine}
+              >
+                + Add new line
+              </Button>
+            </div>
+
             {errors.items && (
               <p className="text-xs text-destructive mt-2">{errors.items.message}</p>
             )}
