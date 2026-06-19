@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ItemNameInput } from "@/components/forms/item-name-input";
 import Link from "next/link";
 import { useState } from "react";
 import { Plus, X, ChevronDown, ChevronRight } from "lucide-react";
@@ -102,6 +103,22 @@ export function NewInvoiceForm({
     setValue(`items.${index}.rate`, p.defaultPrice);
     setValue(`items.${index}.gstPercent`, p.gstPercent);
     setValue(`items.${index}.unit`, p.unit);
+  }
+
+  function appendNewLine() {
+    append({
+      name: "",
+      quantity: 1,
+      unit: "pcs",
+      rate: 0,
+      gstPercent: 0,
+    });
+    // Focus the new item's name input after a tick
+    setTimeout(() => {
+      const inputs = document.querySelectorAll<HTMLInputElement>('[data-item-name-input]');
+      const last = inputs[inputs.length - 1];
+      last?.focus();
+    }, 50);
   }
 
   async function onSubmit(data: CreateInvoiceInput) {
@@ -206,21 +223,104 @@ export function NewInvoiceForm({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() =>
-                append({
-                  name: "",
-                  quantity: 1,
-                  unit: "pcs",
-                  rate: 0,
-                  gstPercent: 0,
-                })
-              }
+              onClick={appendNewLine}
             >
               Add row
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border overflow-x-auto">
+            {/* Mobile: stacked card layout */}
+            <div className="space-y-4 sm:hidden">
+              {fields.map((field, index) => {
+                const item = watchedItems?.[index];
+                const qty = item?.quantity ?? 0;
+                const rate = item?.rate ?? 0;
+                const gstPct = item?.gstPercent ?? 0;
+                const taxable = lineAmount(qty, rate);
+                const gst = gstOnAmount(taxable, gstPct);
+                const amount = taxable + gst;
+                return (
+                  <div key={field.id} className="rounded-lg border bg-card p-3 space-y-3 relative">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-2 right-2 h-7 w-7 p-0 text-destructive"
+                      onClick={() => remove(index)}
+                    >
+                      ×
+                    </Button>
+                    {products.length > 0 && (
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                        onChange={(e) => addProduct(e.target.value, index)}
+                      >
+                        <option value="">— Select product</option>
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    )}
+                    <ItemNameInput
+                      value={item?.name ?? ""}
+                      onChange={(val) => setValue(`items.${index}.name`, val)}
+                      onSelectSuggestion={(suggestion) => {
+                        setValue(`items.${index}.name`, suggestion.name);
+                        setValue(`items.${index}.rate`, suggestion.rate);
+                        setValue(`items.${index}.gstPercent`, suggestion.gstPercent);
+                        setValue(`items.${index}.unit`, suggestion.unit);
+                      }}
+                      onEnterKey={appendNewLine}
+                      className="h-10"
+                    />
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Qty</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          className="h-10 text-right mt-1"
+                          onFocus={selectAllIfZeroOrOne}
+                          {...register(`items.${index}.quantity`, { valueAsNumber: true })}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Rate (₹)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          className="h-10 text-right mt-1"
+                          onFocus={selectAllIfZero}
+                          {...register(`items.${index}.rate`, { valueAsNumber: true })}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">GST %</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          className="h-10 text-right mt-1"
+                          onFocus={selectAllIfZero}
+                          {...register(`items.${index}.gstPercent`, { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t">
+                      <Input
+                        className="h-8 w-16 text-xs"
+                        placeholder="pcs"
+                        {...register(`items.${index}.unit`)}
+                      />
+                      <span className="font-medium tabular-nums">{formatCurrency(amount)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop: table layout */}
+            <div className="rounded-md border overflow-x-auto hidden sm:block">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-primary text-primary-foreground">
@@ -258,9 +358,16 @@ export function NewInvoiceForm({
                               ))}
                             </select>
                           )}
-                          <Input
-                            placeholder="Item name *"
-                            {...register(`items.${index}.name`)}
+                          <ItemNameInput
+                            value={item?.name ?? ""}
+                            onChange={(val) => setValue(`items.${index}.name`, val)}
+                            onSelectSuggestion={(suggestion) => {
+                              setValue(`items.${index}.name`, suggestion.name);
+                              setValue(`items.${index}.rate`, suggestion.rate);
+                              setValue(`items.${index}.gstPercent`, suggestion.gstPercent);
+                              setValue(`items.${index}.unit`, suggestion.unit);
+                            }}
+                            onEnterKey={appendNewLine}
                             className="h-9 min-w-[120px]"
                           />
                         </td>

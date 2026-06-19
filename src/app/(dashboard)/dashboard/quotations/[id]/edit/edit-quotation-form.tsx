@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createInvoiceSchema, type CreateInvoiceInput } from "@/lib/validations/invoice";
+import { createInvoiceSchema, type CreateInvoiceInput, parseRateInput } from "@/lib/validations/invoice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ItemNameInput } from "@/components/forms/item-name-input";
 import Link from "next/link";
 import { useState } from "react";
-import { Plus, X, ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { AddClientDialog } from "@/components/forms/add-client-dialog";
 import { formatCurrency } from "@/lib/utils";
 
@@ -29,6 +29,25 @@ function lineAmount(qty: number, rate: number): number {
 }
 function gstOnAmount(amount: number, gstPercent: number): number {
   return Math.round((amount * gstPercent) / 100 * 100) / 100;
+}
+
+/** Format the amount for a line, supporting rate ranges like "200-300" */
+function formatLineAmount(qty: number, rateText: string | undefined, rate: number, gstPct: number): string {
+  if (rateText) {
+    const parsed = parseRateInput(rateText);
+    if (parsed.rateMax != null) {
+      const lowTaxable = lineAmount(qty, parsed.rate);
+      const lowGst = gstOnAmount(lowTaxable, gstPct);
+      const lowTotal = lowTaxable + lowGst;
+      const highTaxable = lineAmount(qty, parsed.rateMax);
+      const highGst = gstOnAmount(highTaxable, gstPct);
+      const highTotal = highTaxable + highGst;
+      return `${formatCurrency(lowTotal)} – ${formatCurrency(highTotal)}`;
+    }
+  }
+  const taxable = lineAmount(qty, rate);
+  const gst = gstOnAmount(taxable, gstPct);
+  return formatCurrency(taxable + gst);
 }
 
 function selectAllIfZero(e: React.FocusEvent<HTMLInputElement>) {
@@ -49,8 +68,6 @@ type InitialData = {
   dueDate: string;
   notes: string;
   terms: string;
-  deliveryCharges?: number;
-  advancePayment?: number;
   items: Array<{
     productId?: string;
     name: string;
@@ -58,31 +75,27 @@ type InitialData = {
     quantity: number;
     unit: string;
     rate: number;
+    rateMax?: number;
+    rateText?: string;
     gstPercent: number;
   }>;
 };
 
-export function EditInvoiceForm({
-  invoiceId,
-  invoiceNumber,
+export function EditQuotationForm({
+  quotationId,
+  quotationNumber,
   initialData,
   clients: initialClients,
   products,
 }: {
-  invoiceId: string;
-  invoiceNumber: string;
+  quotationId: string;
+  quotationNumber: string;
   initialData: InitialData;
   clients: Client[];
   products: Product[];
 }) {
   const router = useRouter();
   const [clients, setClients] = useState(initialClients);
-  const [showDelivery, setShowDelivery] = useState(
-    initialData.deliveryCharges != null && initialData.deliveryCharges > 0
-  );
-  const [showAdvance, setShowAdvance] = useState(
-    initialData.advancePayment != null && initialData.advancePayment > 0
-  );
   const [showNotesAndTerms, setShowNotesAndTerms] = useState(
     !!(initialData.notes || initialData.terms)
   );
@@ -97,13 +110,12 @@ export function EditInvoiceForm({
   } = useForm<CreateInvoiceInput>({
     resolver: zodResolver(createInvoiceSchema),
     defaultValues: {
+      documentType: "quotation",
       clientId: initialData.clientId,
       invoiceDate: initialData.invoiceDate,
       dueDate: initialData.dueDate || undefined,
       notes: initialData.notes || undefined,
       terms: initialData.terms || undefined,
-      deliveryCharges: initialData.deliveryCharges,
-      advancePayment: initialData.advancePayment,
       items:
         initialData.items.length > 0
           ? initialData.items.map((i) => ({
@@ -113,37 +125,23 @@ export function EditInvoiceForm({
               quantity: i.quantity,
               unit: i.unit,
               rate: i.rate,
+              rateMax: i.rateMax,
+              rateText: i.rateText ?? (i.rateMax != null ? `${i.rate}-${i.rateMax}` : String(i.rate)),
               gstPercent: i.gstPercent,
             }))
-          : [{ name: "", quantity: 1, unit: "pcs", rate: 0, gstPercent: 0 }],
+          : [{ name: "", quantity: 1, unit: "pcs", rate: 0, gstPercent: 0, rateText: "" }],
     },
   });
 
   const watchedItems = watch("items");
-  const watchedDelivery = watch("deliveryCharges");
-  const watchedAdvance = watch("advancePayment");
-
-  const subtotal = (watchedItems ?? []).reduce(
-    (sum, item) => sum + lineAmount(item.quantity || 0, item.rate || 0),
-    0
-  );
-  const totalGst = (watchedItems ?? []).reduce(
-    (sum, item) =>
-      sum + gstOnAmount(lineAmount(item.quantity || 0, item.rate || 0), item.gstPercent || 0),
-    0
-  );
-  const delivery = Number(watchedDelivery) || 0;
-  const advance = Number(watchedAdvance) || 0;
-  const grandTotal = Math.max(0, subtotal + totalGst + delivery - advance);
-
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
 
   function addProduct(productId: string, index: number) {
     const p = products.find((x) => x.id === productId);
     if (!p) return;
-    setValue(`items.${index}.productId`, productId);
     setValue(`items.${index}.name`, p.name);
     setValue(`items.${index}.rate`, p.defaultPrice);
+    setValue(`items.${index}.rateText`, String(p.defaultPrice));
     setValue(`items.${index}.gstPercent`, p.gstPercent);
     setValue(`items.${index}.unit`, p.unit);
   }
@@ -155,6 +153,7 @@ export function EditInvoiceForm({
       unit: "pcs",
       rate: 0,
       gstPercent: 0,
+      rateText: "",
     });
     // Focus the new item's name input after a tick
     setTimeout(() => {
@@ -165,35 +164,43 @@ export function EditInvoiceForm({
   }
 
   async function onSubmit(data: CreateInvoiceInput) {
+    // Preprocess items to parse rate range text before sending
+    const processedItems = data.items.map((item) => {
+      if (item.rateText) {
+        const parsed = parseRateInput(item.rateText);
+        return { ...item, rate: parsed.rate, rateMax: parsed.rateMax, rateText: parsed.rateText };
+      }
+      return item;
+    });
     const payload = {
       clientId: data.clientId,
       invoiceDate: data.invoiceDate,
       dueDate: data.dueDate || null,
       notes: data.notes || null,
       terms: data.terms || null,
-      deliveryCharges: Number(data.deliveryCharges) || 0,
-      advancePayment: Number(data.advancePayment) || 0,
-      items: data.items.map((item) => ({
+      items: processedItems.map((item) => ({
         productId: item.productId,
         name: item.name,
         description: item.description,
         quantity: item.quantity,
         unit: item.unit,
         rate: item.rate,
+        rateMax: item.rateMax,
+        rateText: item.rateText,
         gstPercent: item.gstPercent,
       })),
     };
-    const res = await fetch(`/api/invoices/${invoiceId}`, {
+    const res = await fetch(`/api/invoices/${quotationId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const j = await res.json();
-      alert(j.error ?? "Failed to update invoice");
+      alert(j.error ?? "Failed to update quotation");
       return;
     }
-    router.push(`/dashboard/invoices/${invoiceId}`);
+    router.push(`/dashboard/quotations/${quotationId}`);
     router.refresh();
   }
 
@@ -201,9 +208,9 @@ export function EditInvoiceForm({
     <div>
       <div className="mb-6">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/dashboard/invoices/${invoiceId}`}>← Invoice {invoiceNumber}</Link>
+          <Link href={`/dashboard/quotations/${quotationId}`}>← Quotation {quotationNumber}</Link>
         </Button>
-        <h1 className="text-2xl font-bold mt-2">Edit invoice</h1>
+        <h1 className="text-2xl font-bold mt-2">Edit quotation</h1>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card>
@@ -212,7 +219,7 @@ export function EditInvoiceForm({
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Client *</Label>
+              <Label>Client (optional)</Label>
               <div className="flex gap-2 mt-1">
                 <select
                   className="flex h-10 flex-1 min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -237,15 +244,9 @@ export function EditInvoiceForm({
                 <p className="text-xs text-destructive mt-1">{errors.clientId.message}</p>
               )}
             </div>
-            <div className="flex gap-4 flex-wrap">
-              <div>
-                <Label>Invoice date</Label>
-                <Input type="date" {...register("invoiceDate")} className="mt-1 max-w-[200px]" />
-              </div>
-              <div>
-                <Label>Due date</Label>
-                <Input type="date" {...register("dueDate")} className="mt-1 max-w-[200px]" />
-              </div>
+            <div>
+              <Label>Date</Label>
+              <Input type="date" {...register("invoiceDate")} className="mt-1 max-w-[200px]" />
             </div>
             <button
               type="button"
@@ -289,7 +290,7 @@ export function EditInvoiceForm({
               size="sm"
               onClick={appendNewLine}
             >
-              Add row
+              Add new line
             </Button>
           </CardHeader>
           <CardContent>
@@ -300,9 +301,8 @@ export function EditInvoiceForm({
                 const qty = item?.quantity ?? 0;
                 const rate = item?.rate ?? 0;
                 const gstPct = item?.gstPercent ?? 0;
-                const taxable = lineAmount(qty, rate);
-                const gst = gstOnAmount(taxable, gstPct);
-                const amount = taxable + gst;
+                const rateText = item?.rateText;
+                const amountDisplay = formatLineAmount(qty, rateText, rate, gstPct);
                 return (
                   <div key={field.id} className="rounded-lg border bg-card p-3 space-y-3 relative">
                     <Button
@@ -318,11 +318,12 @@ export function EditInvoiceForm({
                       <select
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                         onChange={(e) => addProduct(e.target.value, index)}
-                        value={item?.productId ?? ""}
                       >
                         <option value="">— Select product</option>
                         {products.map((p) => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
                         ))}
                       </select>
                     )}
@@ -332,6 +333,7 @@ export function EditInvoiceForm({
                       onSelectSuggestion={(suggestion) => {
                         setValue(`items.${index}.name`, suggestion.name);
                         setValue(`items.${index}.rate`, suggestion.rate);
+                        setValue(`items.${index}.rateText`, String(suggestion.rate));
                         setValue(`items.${index}.gstPercent`, suggestion.gstPercent);
                         setValue(`items.${index}.unit`, suggestion.unit);
                       }}
@@ -352,11 +354,17 @@ export function EditInvoiceForm({
                       <div>
                         <Label className="text-xs text-muted-foreground">Rate (₹)</Label>
                         <Input
-                          type="number"
-                          step="0.01"
+                          type="text"
+                          placeholder="e.g. 200 or 200-300"
                           className="h-10 text-right mt-1"
                           onFocus={selectAllIfZero}
-                          {...register(`items.${index}.rate`, { valueAsNumber: true })}
+                          {...register(`items.${index}.rateText`, {
+                            onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                              const val = e.target.value;
+                              const parsed = parseRateInput(val);
+                              setValue(`items.${index}.rate`, parsed.rate);
+                            },
+                          })}
                         />
                       </div>
                       <div>
@@ -377,7 +385,7 @@ export function EditInvoiceForm({
                         placeholder="pcs"
                         {...register(`items.${index}.unit`)}
                       />
-                      <span className="font-medium tabular-nums">{formatCurrency(amount)}</span>
+                      <span className="font-medium tabular-nums">{amountDisplay}</span>
                     </div>
                   </div>
                 );
@@ -388,14 +396,14 @@ export function EditInvoiceForm({
             <div className="rounded-md border overflow-x-auto hidden sm:block">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-primary text-primary-foreground">
-                    <th className="text-left p-3 font-medium">Item</th>
-                    <th className="text-right p-3 w-20">Quantity</th>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left p-3">Item</th>
+                    <th className="text-right p-3 w-20">Qty</th>
                     <th className="text-left p-3 w-16">Unit</th>
-                    <th className="text-right p-3 w-28">Rate</th>
-                    <th className="text-right p-3 w-16">GST %</th>
-                    <th className="text-right p-3 w-28">Amount</th>
-                    <th className="w-12 p-2"></th>
+                    <th className="text-right p-3 w-24">Rate (₹)</th>
+                    <th className="text-right p-3 w-20">GST %</th>
+                    <th className="text-right p-3">Amount</th>
+                    <th className="w-10 p-2"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -404,17 +412,15 @@ export function EditInvoiceForm({
                     const qty = item?.quantity ?? 0;
                     const rate = item?.rate ?? 0;
                     const gstPct = item?.gstPercent ?? 0;
-                    const taxable = lineAmount(qty, rate);
-                    const gst = gstOnAmount(taxable, gstPct);
-                    const amount = taxable + gst;
+                    const rateText = item?.rateText;
+                    const amountDisplay = formatLineAmount(qty, rateText, rate, gstPct);
                     return (
-                      <tr key={field.id} className="border-b border-border">
-                        <td className="p-2 align-top">
+                      <tr key={field.id} className="border-b">
+                        <td className="p-2">
                           {products.length > 0 && (
                             <select
-                              className="mb-1.5 flex h-9 w-full max-w-[160px] rounded-md border border-input bg-background px-2 text-sm"
+                              className="mb-1 flex h-9 w-full max-w-[140px] rounded-md border border-input bg-background px-2 text-sm"
                               onChange={(e) => addProduct(e.target.value, index)}
-                              value={item?.productId ?? ""}
                             >
                               <option value="">— Select product</option>
                               {products.map((p) => (
@@ -430,56 +436,66 @@ export function EditInvoiceForm({
                             onSelectSuggestion={(suggestion) => {
                               setValue(`items.${index}.name`, suggestion.name);
                               setValue(`items.${index}.rate`, suggestion.rate);
+                              setValue(`items.${index}.rateText`, String(suggestion.rate));
                               setValue(`items.${index}.gstPercent`, suggestion.gstPercent);
                               setValue(`items.${index}.unit`, suggestion.unit);
                             }}
                             onEnterKey={appendNewLine}
-                            className="h-9 min-w-[120px]"
+                            className="h-9"
                           />
                         </td>
-                        <td className="p-2 text-right align-top">
+                        <td className="p-2 text-right w-20">
                           <Input
                             type="number"
                             step="0.01"
-                            className="h-9 w-20 text-right inline-block"
+                            className="h-9 w-full min-w-0 text-right"
                             onFocus={selectAllIfZeroOrOne}
                             {...register(`items.${index}.quantity`, { valueAsNumber: true })}
                           />
                         </td>
-                        <td className="p-2 align-top">
+                        <td className="p-2 w-16">
                           <Input
-                            className="h-9 w-16"
+                            className="h-9 w-full min-w-0"
                             {...register(`items.${index}.unit`)}
                           />
                         </td>
-                        <td className="p-2 text-right align-top">
+                        <td className="p-2 text-right w-28">
                           <Input
-                            type="number"
-                            step="0.01"
-                            className="h-9 w-24 text-right inline-block"
+                            type="text"
+                            placeholder="e.g. 200 or 200-300"
+                            className="h-9 w-full min-w-0 text-right"
                             onFocus={selectAllIfZero}
-                            {...register(`items.${index}.rate`, { valueAsNumber: true })}
+                            {...register(`items.${index}.rateText`, {
+                              onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                                const val = e.target.value;
+                                const parsed = parseRateInput(val);
+                                setValue(`items.${index}.rate`, parsed.rate);
+                              },
+                            })}
                           />
                         </td>
-                        <td className="p-2 text-right align-top">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min={0}
-                            className="h-9 w-14 text-right inline-block"
-                            onFocus={selectAllIfZero}
-                            {...register(`items.${index}.gstPercent`, { valueAsNumber: true })}
-                          />
+                        <td className="p-2 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min={0}
+                              className="h-9 w-14 text-right"
+                              onFocus={selectAllIfZero}
+                              {...register(`items.${index}.gstPercent`, { valueAsNumber: true })}
+                            />
+                            <span className="shrink-0 text-muted-foreground w-4">%</span>
+                          </div>
                         </td>
-                        <td className="p-2 text-right align-top font-medium tabular-nums">
-                          {formatCurrency(amount)}
+                        <td className="p-2 text-right font-medium tabular-nums whitespace-nowrap">
+                          {amountDisplay}
                         </td>
-                        <td className="p-2 align-top">
+                        <td className="p-2">
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="h-9 w-9 p-0 text-destructive hover:text-destructive"
+                            className="h-9 w-9 p-0 text-destructive"
                             onClick={() => remove(index)}
                           >
                             ×
@@ -491,96 +507,6 @@ export function EditInvoiceForm({
                 </tbody>
               </table>
             </div>
-            <div className="mt-6 rounded-lg border bg-muted/40 dark:bg-muted/20 p-4 space-y-2.5 max-w-sm ml-auto">
-              <div className="flex justify-between text-sm">
-                <span>Total</span>
-                <span className="tabular-nums">{formatCurrency(subtotal)}</span>
-              </div>
-              {totalGst > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span>Total GST</span>
-                  <span className="tabular-nums">{formatCurrency(totalGst)}</span>
-                </div>
-              )}
-              {!showDelivery ? (
-                <button
-                  type="button"
-                  onClick={() => setShowDelivery(true)}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add delivery charges
-                </button>
-              ) : (
-                <div className="flex justify-between text-sm items-center gap-2">
-                  <span>Delivery charges</span>
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      placeholder="0"
-                      className="h-8 w-24 text-right tabular-nums"
-                      onFocus={selectAllIfZero}
-                      {...register("deliveryCharges", { valueAsNumber: true })}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                      onClick={() => {
-                        setShowDelivery(false);
-                        setValue("deliveryCharges", undefined as unknown as number);
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-              {!showAdvance ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAdvance(true)}
-                  className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add advance payment
-                </button>
-              ) : (
-                <div className="flex justify-between text-sm items-center gap-2">
-                  <span>Advance paid</span>
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      placeholder="0"
-                      className="h-8 w-24 text-right tabular-nums"
-                      onFocus={selectAllIfZero}
-                      {...register("advancePayment", { valueAsNumber: true })}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                      onClick={() => {
-                        setShowAdvance(false);
-                        setValue("advancePayment", undefined as unknown as number);
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-              <div className="flex justify-between font-semibold pt-3 border-t border-border">
-                <span>Total (INR)</span>
-                <span className="tabular-nums">{formatCurrency(grandTotal)}</span>
-              </div>
-            </div>
             {errors.items && (
               <p className="text-xs text-destructive mt-2">{errors.items.message}</p>
             )}
@@ -589,7 +515,7 @@ export function EditInvoiceForm({
                 {isSubmitting ? "Saving…" : "Save changes"}
               </Button>
               <Button type="button" variant="outline" asChild>
-                <Link href={`/dashboard/invoices/${invoiceId}`}>Cancel</Link>
+                <Link href={`/dashboard/quotations/${quotationId}`}>Cancel</Link>
               </Button>
             </div>
           </CardContent>

@@ -44,7 +44,7 @@ const secondaryNav = [
   { href: "/dashboard/catalogue", label: "Products / Catalogue", icon: Package },
 ];
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
@@ -56,24 +56,28 @@ export function DashboardSidebar() {
     <aside
       className={cn(
         "flex h-screen flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200",
-        collapsed ? "w-[52px]" : "w-56"
+        collapsed ? "w-[52px] lg:w-[52px]" : "w-64 lg:w-56"
       )}
     >
       {/* Logo + collapse */}
       <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-3 border-sidebar-accent/20 border-b">
         {!collapsed && (
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-sidebar-foreground">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-accent text-sidebar-accent-foreground text-sm font-bold">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2.5 font-semibold text-sidebar-foreground"
+            onClick={onNavigate}
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-500/25">
               S
             </span>
-            Star Uniform
+            <span className="text-base tracking-tight">Star Uniform</span>
           </Link>
         )}
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className="text-sidebar-muted hover:text-sidebar-foreground hover:bg-white/10"
+          className="text-sidebar-muted hover:text-sidebar-foreground hover:bg-white/10 hidden lg:flex"
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (
@@ -84,8 +88,8 @@ export function DashboardSidebar() {
         </Button>
       </div>
 
-      {/* Main nav — Invoize order */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+      {/* Main nav */}
+      <nav className="flex-1 overflow-y-auto p-2 lg:p-3 space-y-0.5">
         {mainNav.map((item) => {
           const active = isActive(item.href);
           const content = (
@@ -111,10 +115,10 @@ export function DashboardSidebar() {
                 <DropdownMenuTrigger asChild>
                   <button
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                      "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-all duration-150",
                       active
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-muted hover:bg-white/10 hover:text-sidebar-foreground"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm shadow-emerald-500/20"
+                        : "text-sidebar-muted hover:bg-white/8 hover:text-sidebar-foreground"
                     )}
                   >
                     {content}
@@ -122,10 +126,10 @@ export function DashboardSidebar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-48">
                   <DropdownMenuItem asChild>
-                    <Link href={item.href}>View clients</Link>
+                    <Link href={item.href} onClick={onNavigate}>View clients</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/clients/new">Add client</Link>
+                    <Link href="/dashboard/clients/new" onClick={onNavigate}>Add client</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -137,13 +141,14 @@ export function DashboardSidebar() {
               key={item.href}
               href={item.href === "/dashboard/help" ? "/dashboard/settings" : item.href}
               className={cn(
-                "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-all duration-150",
                 collapsed && "justify-center px-2",
                 active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-muted hover:bg-white/10 hover:text-sidebar-foreground"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm shadow-emerald-500/20"
+                  : "text-sidebar-muted hover:bg-white/8 hover:text-sidebar-foreground"
               )}
               title={collapsed ? item.label : undefined}
+              onClick={onNavigate}
             >
               {content}
             </Link>
@@ -157,13 +162,14 @@ export function DashboardSidebar() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors",
+              "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm transition-all duration-150",
               collapsed && "justify-center px-2",
               isActive(item.href)
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-sidebar-muted hover:bg-white/10 hover:text-sidebar-foreground"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm shadow-emerald-500/20"
+                : "text-sidebar-muted hover:bg-white/8 hover:text-sidebar-foreground"
             )}
             title={collapsed ? item.label : undefined}
+            onClick={onNavigate}
           >
             <item.icon className="h-4 w-4 shrink-0" />
             {!collapsed && item.label}
@@ -172,7 +178,7 @@ export function DashboardSidebar() {
       </nav>
 
       {/* Bottom: theme + log out */}
-      <div className="border-t border-white/10 p-3 space-y-1">
+      <div className="border-t border-white/10 p-2 lg:p-3 space-y-0.5">
         <div className={cn("flex items-center gap-2", collapsed ? "justify-center" : "justify-between px-2 py-1")}>
           {!collapsed && <span className="text-xs text-sidebar-muted">Theme</span>}
           <ThemeToggle variant="ghost" size="icon" className="text-sidebar-muted hover:text-sidebar-foreground hover:bg-white/10" />
@@ -180,7 +186,7 @@ export function DashboardSidebar() {
         <Button
           variant="ghost"
           className={cn(
-            "w-full justify-start gap-2 text-sidebar-muted hover:bg-white/10 hover:text-sidebar-foreground",
+            "w-full justify-start gap-2.5 text-sidebar-muted hover:bg-white/10 hover:text-sidebar-foreground",
             collapsed && "w-9 justify-center px-0"
           )}
           onClick={() => signOut({ callbackUrl: "/" })}

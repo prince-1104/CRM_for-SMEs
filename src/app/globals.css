@@ -33,6 +33,9 @@
     --sidebar-muted: 220 9% 55%;
     --sidebar-accent: 142 71% 45%;
     --sidebar-accent-foreground: 0 0% 100%;
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
   }
 
   /* SaaS-grade dark (primary theme) — green accent */
@@ -63,6 +66,8 @@
     --sidebar-muted: 220 9% 55%;
     --sidebar-accent: 142 71% 45%;
     --sidebar-accent-foreground: 0 0% 100%;
+    --popover: 222 30% 13%;
+    --popover-foreground: 220 14% 91%;
   }
 }
 
@@ -82,5 +87,67 @@
     -webkit-appearance: none;
     appearance: none;
     margin: 0;
+  }
+}
+
+/* ─── Premium card styling ─── */
+@layer components {
+  /* Mobile-friendly responsive table: cards on small screens */
+  .responsive-table {
+    @apply w-full text-sm;
+  }
+
+  /* Smooth page transitions */
+  .page-enter {
+    animation: pageEnter 0.2s ease-out;
+  }
+
+  @keyframes pageEnter {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* ─── Mobile item cards (used in lists) ─── */
+@layer utilities {
+  .mobile-card-grid {
+    @apply grid gap-3;
+  }
+}
+
+/* ─── Touch-friendly tap targets ─── */
+@media (max-width: 640px) {
+  /* Ensure all interactive elements have minimum 44px touch target */
+  button, a, select, input[type="checkbox"] {
+    min-height: 36px;
+  }
+
+  /* Slightly larger font on mobile for readability */
+  table {
+    font-size: 0.8125rem;
+  }
+}
+
+/* ─── Smooth scrollbar for dark mode ─── */
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(215, 20%, 25%);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(215, 20%, 35%);
   }
 }

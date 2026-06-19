@@ -222,51 +222,85 @@ export default async function DashboardPage() {
               No invoices yet. Create your first invoice to get started.
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-b-xl">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left p-3 font-medium text-muted-foreground w-10">
-                      <input type="checkbox" className="rounded border-input" aria-label="Select all" />
-                    </th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Invoice#</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Client</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Issue Date</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Due Date</th>
-                    <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentInvoices.map((inv) => (
-                    <tr key={inv.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
-                      <td className="p-3">
-                        <input type="checkbox" className="rounded border-input" aria-label={`Select ${inv.invoiceNumber}`} />
-                      </td>
-                      <td className="p-3">
-                        <Link
-                          href={`/dashboard/invoices/${inv.id}`}
-                          className="font-medium text-primary hover:underline"
-                        >
-                          {inv.invoiceNumber}
-                        </Link>
-                      </td>
-                      <td className="p-3 text-foreground">{inv.client?.name ?? "—"}</td>
-                      <td className="p-3 text-muted-foreground">{formatDate(inv.invoiceDate)}</td>
-                      <td className="p-3 text-muted-foreground">
-                        {inv.dueDate ? formatDate(inv.dueDate) : "—"}
-                      </td>
-                      <td className="p-3 text-right font-medium tabular-nums">
+            <>
+              {/* Mobile View */}
+              <div className="divide-y divide-border sm:hidden">
+                {recentInvoices.map((inv) => (
+                  <div key={inv.id} className="p-4 hover:bg-muted/10 transition-colors space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Link
+                        href={`/dashboard/invoices/${inv.id}`}
+                        className="font-semibold text-primary hover:underline"
+                      >
+                        {inv.invoiceNumber}
+                      </Link>
+                      <StatusPill status={inv.status} dueDate={inv.dueDate} />
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Client:</span>
+                      <span className="font-medium text-foreground">{inv.client?.name ?? "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Amount:</span>
+                      <span className="font-semibold text-foreground tabular-nums">
                         {formatCurrency(Number(inv.grandTotal))}
-                      </td>
-                      <td className="p-3">
-                        <StatusPill status={inv.status} dueDate={inv.dueDate} />
-                      </td>
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                      <span>Issued: {formatDate(inv.invoiceDate)}</span>
+                      {inv.dueDate && <span>Due: {formatDate(inv.dueDate)}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop View */}
+              <div className="overflow-x-auto rounded-b-xl hidden sm:block">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/30">
+                      <th className="text-left p-3 font-medium text-muted-foreground w-10">
+                        <input type="checkbox" className="rounded border-input" aria-label="Select all" />
+                      </th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Invoice#</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Client</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Issue Date</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Due Date</th>
+                      <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {recentInvoices.map((inv) => (
+                      <tr key={inv.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
+                        <td className="p-3">
+                          <input type="checkbox" className="rounded border-input" aria-label={`Select ${inv.invoiceNumber}`} />
+                        </td>
+                        <td className="p-3">
+                          <Link
+                            href={`/dashboard/invoices/${inv.id}`}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            {inv.invoiceNumber}
+                          </Link>
+                        </td>
+                        <td className="p-3 text-foreground">{inv.client?.name ?? "—"}</td>
+                        <td className="p-3 text-muted-foreground">{formatDate(inv.invoiceDate)}</td>
+                        <td className="p-3 text-muted-foreground">
+                          {inv.dueDate ? formatDate(inv.dueDate) : "—"}
+                        </td>
+                        <td className="p-3 text-right font-medium tabular-nums">
+                          {formatCurrency(Number(inv.grandTotal))}
+                        </td>
+                        <td className="p-3">
+                          <StatusPill status={inv.status} dueDate={inv.dueDate} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

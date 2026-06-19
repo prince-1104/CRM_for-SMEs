@@ -120,13 +120,14 @@ export default function InvoicesList({
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 flex-wrap items-center">
+      {/* Status filter pills — scrollable on mobile */}
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 items-center">
         {statuses.map((s) => (
           <Button
             key={s || "all"}
             variant={status === s ? "default" : "outline"}
             size="sm"
-            className="rounded-lg"
+            className="rounded-lg shrink-0"
             onClick={() => router.push(`/dashboard/invoices?status=${s}&page=1`)}
           >
             {s || "All"}
@@ -136,7 +137,7 @@ export default function InvoicesList({
           <Button
             variant="destructive"
             size="sm"
-            className="rounded-lg"
+            className="rounded-lg shrink-0"
             onClick={() => setDeleteConfirm({ single: null, bulk: true })}
           >
             Delete selected ({selectedIds.size})
@@ -147,7 +148,34 @@ export default function InvoicesList({
         <p className="py-8 text-center text-muted-foreground">No invoices yet.</p>
       ) : (
         <>
-          <div className="rounded-xl border overflow-hidden">
+          {/* Mobile: card layout */}
+          <div className="space-y-3 sm:hidden">
+            {invoices.map((inv) => (
+              <Link
+                key={inv.id}
+                href={`/dashboard/invoices/${inv.id}`}
+                className="block rounded-xl border bg-card p-4 hover:bg-muted/20 transition-colors active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-primary">{inv.invoiceNumber}</p>
+                    <p className="text-sm text-foreground mt-0.5">{inv.client?.name ?? "—"}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-medium tabular-nums">{formatCurrency(Number(inv.grandTotal))}</p>
+                    <StatusPill status={inv.status} dueDate={inv.dueDate} />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {formatDate(inv.invoiceDate)}
+                  {inv.dueDate && ` · Due: ${formatDate(inv.dueDate)}`}
+                </p>
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="rounded-xl border overflow-hidden hidden sm:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
@@ -162,8 +190,8 @@ export default function InvoicesList({
                   </th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Invoice#</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Client</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Issue Date</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Due Date</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground hidden lg:table-cell">Issue Date</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground hidden lg:table-cell">Due Date</th>
                   <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
                   <th className="text-right p-3 font-medium text-muted-foreground w-20">Actions</th>
@@ -190,8 +218,8 @@ export default function InvoicesList({
                       </Link>
                     </td>
                     <td className="p-3 text-foreground">{inv.client?.name ?? "—"}</td>
-                    <td className="p-3 text-muted-foreground">{formatDate(inv.invoiceDate)}</td>
-                    <td className="p-3 text-muted-foreground">
+                    <td className="p-3 text-muted-foreground hidden lg:table-cell">{formatDate(inv.invoiceDate)}</td>
+                    <td className="p-3 text-muted-foreground hidden lg:table-cell">
                       {inv.dueDate ? formatDate(inv.dueDate) : "—"}
                     </td>
                     <td className="p-3 text-right font-medium tabular-nums">
@@ -216,7 +244,7 @@ export default function InvoicesList({
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/invoices/${inv.id}`}>
+                            <Link href={`/dashboard/invoices/${inv.id}/edit`}>
                               <Pencil className="h-4 w-4 mr-2" />
                               Edit
                             </Link>

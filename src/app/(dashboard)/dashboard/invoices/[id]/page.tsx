@@ -42,7 +42,7 @@ export default async function InvoiceDetailPage({
             <div>
               <p className="font-medium">Database temporarily unavailable</p>
               <p className="text-sm text-muted-foreground mt-1">
-                We couldn’t load this invoice. Check your connection or try again later.
+                We couldn't load this invoice. Check your connection or try again later.
               </p>
               <Button asChild className="mt-4">
                 <Link href="/dashboard/invoices">Back to Invoices</Link>
@@ -66,39 +66,42 @@ export default async function InvoiceDetailPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      {/* Header — responsive stacking */}
+      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/dashboard/invoices">← Invoices</Link>
           </Button>
-          <h1 className="text-2xl font-bold">{invoice.invoiceNumber}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">{invoice.invoiceNumber}</h1>
           <span
             className={
               invoice.status === "paid"
-                ? "text-green-600"
+                ? "text-green-600 text-sm font-medium"
                 : invoice.status === "partial"
-                ? "text-amber-600"
-                : "text-muted-foreground"
+                ? "text-amber-600 text-sm font-medium"
+                : "text-muted-foreground text-sm"
             }
           >
             {invoice.status}
           </span>
         </div>
-        <InvoiceActions
-          invoiceId={id}
-          status={invoice.status}
-          grandTotal={grandTotal}
-          totalPaid={totalPaid}
-          docNumber={invoice.invoiceNumber}
-        />
+        <div className="flex items-center gap-2 flex-wrap">
+          <InvoiceActions
+            invoiceId={id}
+            status={invoice.status}
+            grandTotal={grandTotal}
+            totalPaid={totalPaid}
+            docNumber={invoice.invoiceNumber}
+          />
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle>From</CardTitle>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg">From</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm space-y-1">
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0 text-sm space-y-1">
             <p className="font-medium">{invoice.organization.name}</p>
             {invoice.organization.address && <p className="text-muted-foreground">{invoice.organization.address}</p>}
             {invoice.organization.gstNumber && <p>GSTIN: {invoice.organization.gstNumber}</p>}
@@ -111,10 +114,10 @@ export default async function InvoiceDetailPage({
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle>Bill to</CardTitle>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg">Bill to</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm space-y-1">
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0 text-sm space-y-1">
             {invoice.client ? (
               <>
                 <p className="font-medium">{invoice.client.name}</p>
@@ -139,15 +142,37 @@ export default async function InvoiceDetailPage({
         </Card>
       </div>
 
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Items</CardTitle>
+      <Card className="mt-4 sm:mt-6">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg">Items</CardTitle>
           <p className="text-sm text-muted-foreground">
             Date: {formatDate(invoice.invoiceDate)}
           </p>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border overflow-x-auto">
+        <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+          {/* Mobile: card layout */}
+          <div className="space-y-3 sm:hidden">
+            {invoice.items
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map((item) => (
+                <div key={item.id} className="rounded-lg border bg-card p-3 space-y-1.5">
+                  <p className="font-medium">{item.name}</p>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Qty: {Number(item.quantity)} × ₹{Number(item.rate).toFixed(2)}</span>
+                    <span className="font-medium text-foreground">₹{Number(item.amount).toFixed(2)}</span>
+                  </div>
+                  {Number(item.gstPercent) > 0 && (
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>GST {Number(item.gstPercent)}%</span>
+                      <span>₹{Number(item.gstAmount).toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="rounded-md border overflow-x-auto hidden sm:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
@@ -195,14 +220,14 @@ export default async function InvoiceDetailPage({
       </Card>
 
       {invoice.payments.length > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Payments</CardTitle>
+        <Card className="mt-4 sm:mt-6">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg">Payments</CardTitle>
             <p className="text-sm text-muted-foreground">
               Total paid: {formatCurrency(totalPaid)} | Pending: {formatCurrency(pending)}
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
             <ul className="space-y-2">
               {invoice.payments.map((p) => (
                 <li key={p.id} className="flex justify-between text-sm">
@@ -219,11 +244,11 @@ export default async function InvoiceDetailPage({
       )}
 
       {(invoice.notes || invoice.terms) && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Notes / Terms</CardTitle>
+        <Card className="mt-4 sm:mt-6">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-lg">Notes / Terms</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm">
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0 text-sm">
             {invoice.notes && <p>{invoice.notes}</p>}
             {invoice.terms && <p className="mt-2">{invoice.terms}</p>}
           </CardContent>
